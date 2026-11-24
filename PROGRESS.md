@@ -18,3 +18,4 @@
 - APK yig'ish faqat `C:\hr\app` da ishladi (manzilda bo'sh joy bo'lmasligi kerak). Buyruq: `gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a`, `JAVA_HOME` = Android Studio jbr. Android SDK Platform 37 o'rnatilgan. Ilova manbasini `app/` dan `C:\hr\app` ga ko'chirish kerak.
 - `server/.env` da BOT_TOKEN va DATABASE_URL bor (git'ga tushmaydi). `.env` ni shell orqali `source` qilmang (URL ichidagi `&` buyruqni bo'lib yuboradi); `node --env-file=.env` ishlating.
 - Android emulyatori (Pixel_9) bu kompyuterda juda sekin, ilovani real telefonda sinang.
+- Release yig'ishda `android/gradle.properties` da `android.enableMinifyInReleaseBuilds=false` bo'lishi shart: aks holda R8 WorkManager sinfini o'chirib, ilova ochilishda qulaydi (logcat: WorkDatabase). `android/` qayta generatsiya qilinsa, shuni qayta qo'ying.
