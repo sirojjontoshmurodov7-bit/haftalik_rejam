@@ -88,12 +88,13 @@ export default function App() {
         </Pressable>
       )}
       <View style={s.tabs}>
-        {[['today', 'Bugun'], ['set', 'Sozlama']].map(([k, l]) => (
+        {[['today', 'Bugun'], ['week', 'Hafta'], ['set', 'Sozlama']].map(([k, l]) => (
           <Pressable key={k} onPress={() => setTab(k)} style={[s.tab, tab === k && s.tabOn]}><Text style={tab === k ? s.tabOnT : s.tabT}>{l}</Text></Pressable>
         ))}
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }}>
         {tab === 'today' && <Today tasks={tasks} answers={answers} onAnswer={answer} onDelete={removeTask} />}
+        {tab === 'week' && <WeekView tasks={tasks} answers={answers} />}
         {tab === 'set' && <Settings session={session} onLogin={async (url, code) => {
           try { await saveSession(await login(url, code)); await pushAllLocal(tasks).catch(() => {}); await sync(); Alert.alert('Ulandi', 'Bot bilan sinxronlash yoqildi.'); }
           catch (e) { Alert.alert('Xato', e.message); }
@@ -341,6 +342,114 @@ function AddSheet({ visible, onClose, onAdd }) {
   );
 }
 
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const mondayOf = (d) => addDays(d, -((d.getDay() + 6) % 7));
+const prettyDay = (d) => `${d.getDate()}-${MONTHS[d.getMonth()]}, ${WEEKDAYS[d.getDay()]}`;
+
+function WeekView({ tasks, answers }) {
+  const { width } = useWindowDimensions();
+  const [picked, setPicked] = useState(null);
+  const today = new Date();
+  const todayStr = dateStr(today);
+  const monday = mondayOf(today);
+
+  // answers: { "taskId|date": status } -> sana bo'yicha guruhlash
+  const byDate = {};
+  for (const [k, st] of Object.entries(answers)) {
+    const i = k.lastIndexOf('|');
+    const id = k.slice(0, i); const date = k.slice(i + 1);
+    (byDate[date] = byDate[date] || []).push({ id, status: st });
+  }
+  const weekLogs = [];
+  for (let i = 0; i < 7; i++) weekLogs.push(...(byDate[dateStr(addDays(monday, i))] || []));
+  const done = weekLogs.filter((l) => l.status === 'done').length;
+  const pct = weekLogs.length ? Math.round((done / weekLogs.length) * 100) : 0;
+  let best = 0; let cur = 0;
+  for (let i = 44; i >= 0; i--) {
+    const logs = byDate[dateStr(addDays(today, -i))];
+    if (logs && logs.every((l) => l.status === 'done')) { cur++; best = Math.max(best, cur); } else if (logs || i !== 0) cur = 0;
+  }
+
+  const gap = 6;
+  const cell = Math.floor((width - 32 - gap * 6) / 7);
+  const start = addDays(monday, -35);
+  const cells = Array.from({ length: 42 }, (_, i) => {
+    const d = addDays(start, i);
+    const date = dateStr(d);
+    const logs = byDate[date] || [];
+    const dn = logs.filter((l) => l.status === 'done').length;
+    const level = !logs.length ? 0 : dn === logs.length ? 3 : dn / logs.length >= 0.5 ? 2 : 1;
+    return { d, date, level, future: date > todayStr, n: d.getDate() };
+  });
+  const heat = [C.paper3, '#cdeedd', '#a3e7c3', C.mint];
+  const titles = Object.fromEntries(tasks.map((t) => [String(t.id), t.title]));
+  const detail = picked ? byDate[picked] || [] : null;
+
+  return (
+    <View>
+      <Text style={s.h2}>Hafta</Text>
+      <View style={s.figs}>
+        <View style={s.fig}><Text style={s.figN}>{done}/{weekLogs.length}</Text><Text style={s.muted}>bu hafta bajarildi</Text></View>
+        <View style={s.fig}><Text style={s.figN}>{pct}%</Text><Text style={s.muted}>haftalik natija</Text></View>
+        <View style={s.fig}><Text style={s.figN}>{best}</Text><Text style={s.muted}>eng uzun seriya, kun</Text></View>
+      </View>
+
+      <Text style={[s.h2, { marginTop: 24, fontSize: 18 }]}>Oxirgi 6 hafta</Text>
+      <View style={[s.heatRow, { gap }]}>
+        {ORDER.map((wd) => <Text key={wd} style={[s.heatH, { width: cell }]}>{DAYS[wd]}</Text>)}
+      </View>
+      <View style={[s.heat, { gap }]}>
+        {cells.map((c) => (
+          <Pressable key={c.date} disabled={c.future} onPress={() => setPicked(picked === c.date ? null : c.date)} accessibilityRole="button"
+            accessibilityLabel={`${prettyDay(c.d)}`}
+            style={[s.cell, { width: cell, height: cell, backgroundColor: picked === c.date ? C.ink : heat[c.level], opacity: c.future ? 0.45 : 1 }, c.date === todayStr && s.cellToday]}>
+            <Text style={[s.cellT, picked === c.date && { color: C.paper }]}>{c.n}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <View style={s.legend}>
+        <Text style={s.muted}>Kam</Text>
+        {heat.map((h, i) => <View key={i} style={[s.legendBox, { backgroundColor: h }]} />)}
+        <Text style={s.muted}>Ko'p</Text>
+      </View>
+
+      <View style={s.detail}>
+        <Text style={s.title}>{picked ? prettyDay(new Date(`${picked}T12:00:00`)) : 'Kun tafsiloti'}</Text>
+        {!picked && <Text style={s.muted}>Kvadratni bosing, o'sha kundagi vazifalar shu yerda ochiladi.</Text>}
+        {picked && !detail.length && <Text style={s.muted}>Bu kunda javob yozilmagan.</Text>}
+        {picked && detail.map((l) => (
+          <View key={l.id} style={[s.detailRow, l.status === 'done' && s.cardDone, l.status === 'missed' && s.cardMissed]}>
+            <Text style={s.detailT}>{titles[l.id] || 'O\'chirilgan vazifa'}</Text>
+            <Text style={s.muted}>{l.status === 'done' ? 'bajarildi' : 'bajarilmadi'}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Text style={[s.h2, { marginTop: 28, fontSize: 18 }]}>Shu haftaning jadvali</Text>
+      {Array.from({ length: 7 }, (_, i) => {
+        const d = addDays(monday, i);
+        const date = dateStr(d);
+        const list = tasks.filter((t) => isActiveOn(t, d)).sort((a, b) => toMin(a.start) - toMin(b.start));
+        return (
+          <View key={date} style={[s.dayBlock, date === todayStr && s.dayBlockToday]}>
+            <Text style={s.dayName}>{WEEKDAYS[d.getDay()][0].toUpperCase() + WEEKDAYS[d.getDay()].slice(1)}, {d.getDate()}-{MONTHS[d.getMonth()]}</Text>
+            {!list.length && <Text style={s.muted}>Reja yo'q</Text>}
+            {list.map((t) => {
+              const a = answers[`${t.id}|${date}`];
+              return (
+                <View key={t.id} style={s.slot}>
+                  <Text style={s.slotTime}>{t.start}-{t.end}</Text>
+                  <Text style={[s.slotTitle, a === 'done' && { color: C.mintDeep }, a === 'missed' && { color: '#b9453c' }]} numberOfLines={1}>{t.title}</Text>
+                </View>
+              );
+            })}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 function Settings({ session, onLogin }) {
   const [url, setUrl] = useState(session?.apiUrl || 'https://haftalik-rejam.onrender.com');
   const [code, setCode] = useState('');
@@ -396,6 +505,26 @@ const s = StyleSheet.create({
   tab: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 999, backgroundColor: C.paper2 },
   tabOn: { backgroundColor: C.ink }, tabT: { color: C.ink2, fontWeight: '500' }, tabOnT: { color: C.paper, fontWeight: '600' },
   muted: { color: C.muted, fontSize: 14 },
+  figs: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  fig: { flex: 1, backgroundColor: C.card, borderRadius: 20, padding: 12, borderBottomWidth: 3, borderBottomColor: C.rule },
+  figN: { fontSize: 24, fontWeight: '600', color: C.ink },
+  heatRow: { flexDirection: 'row', marginTop: 10 },
+  heatH: { textAlign: 'center', fontSize: 13, color: C.muted },
+  heat: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 },
+  cell: { borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  cellToday: { borderWidth: 2, borderColor: C.ink },
+  cellT: { fontSize: 14, fontWeight: '500', color: C.ink },
+  legend: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+  legendBox: { width: 20, height: 20, borderRadius: 7 },
+  detail: { marginTop: 16, padding: 16, borderRadius: 24, backgroundColor: C.paper2, gap: 8 },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, padding: 12, borderRadius: 16, backgroundColor: C.card },
+  detailT: { flex: 1, fontSize: 16, fontWeight: '500', color: C.ink },
+  dayBlock: { marginTop: 10, padding: 14, borderRadius: 20, backgroundColor: C.card, borderBottomWidth: 3, borderBottomColor: C.rule, gap: 6 },
+  dayBlockToday: { borderWidth: 2, borderColor: C.ink },
+  dayName: { fontSize: 16, fontWeight: '600', color: C.ink },
+  slot: { flexDirection: 'row', gap: 12 },
+  slotTime: { width: 104, fontSize: 15, fontWeight: '600', color: C.ink2 },
+  slotTitle: { flex: 1, fontSize: 15, color: C.ink },
   big: { fontSize: 28, fontWeight: '600', color: C.ink },
   progressRow: { flexDirection: 'row', alignItems: 'baseline', marginTop: 12 },
   track: { height: 10, borderRadius: 999, backgroundColor: C.paper3, overflow: 'hidden', marginTop: 6 },
