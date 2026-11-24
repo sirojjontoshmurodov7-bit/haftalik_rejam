@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const K = { tasks: 'tasks.v1', session: 'session.v1', answers: 'answers.v1', pending: 'pending.v1' };
+const K = { tasks: 'tasks.v1', session: 'session.v1', answers: 'answers.v1', pending: 'pending.v1', ops: 'ops.v1' };
 
 async function get(key, fallback) {
   try { const v = await AsyncStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
@@ -29,3 +29,7 @@ export async function mergeAnswers(logs) {
 // Internet bo'lmaganda yuborilmagan javoblar navbati
 export const loadPending = () => get(K.pending, []);
 export const savePending = (p) => set(K.pending, p);
+
+// Yuborilmagan vazifa amallari: {op:'add', task} yoki {op:'del', id}
+export const loadOps = () => get(K.ops, []);
+export const saveOps = (o) => set(K.ops, o);

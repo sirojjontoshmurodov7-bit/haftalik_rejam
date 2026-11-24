@@ -1,4 +1,4 @@
-import { loadSession, loadPending, savePending } from './storage';
+import { loadSession, loadPending, savePending, loadOps, saveOps } from './storage';
 
 async function call(session, path, method = 'GET', body) {
   const res = await fetch(`${session.apiUrl}${path}`, {
@@ -18,11 +18,36 @@ export async function login(apiUrl, code) {
   return { apiUrl: url, userId: j.userId, secret: j.secret };
 }
 
-export async function pushTasks(tasks) {
+// Vazifa amallari navbatga qo'yiladi va bittadan yuboriladi: shu tufayli bot yoki sayt qo'shgan vazifalar o'chib ketmaydi.
+export async function queueTaskOp(op) {
+  const ops = await loadOps();
+  ops.push(op);
+  await saveOps(ops);
+  await flushOps();
+}
+
+export async function flushOps() {
   const s = await loadSession();
-  if (!s) return false;
-  await call(s, '/api/tasks', 'PUT', { tasks });
-  return true;
+  if (!s) return;
+  const ops = await loadOps();
+  const left = [];
+  for (const o of ops) {
+    try {
+      if (o.op === 'add') await call(s, '/api/tasks', 'POST', { task: o.task });
+      else await call(s, `/api/tasks/${encodeURIComponent(o.id)}`, 'DELETE');
+    } catch { left.push(o); }
+  }
+  await saveOps(left);
+}
+
+// Ulanganda mahalliy vazifalarni serverga qo'shadi (mavjudlari yangilanadi, boshqalari o'chmaydi).
+export async function pushAllLocal(tasks) {
+  for (const t of tasks) await queueTaskOp({ op: 'add', task: t });
+}
+
+export async function syncNow() {
+  await flushOps();
+  await flushPending();
 }
 
 export async function pullState() {
