@@ -1,0 +1,13 @@
+node_modules/
+.env
+*.db
+server/data/
+dist/
+*.log
+.expo/
+app/android/build/
+app/android/app/build/
+app/android/.gradle/
+app/android/local.properties
+graphify-out/cache/
+.git_old/

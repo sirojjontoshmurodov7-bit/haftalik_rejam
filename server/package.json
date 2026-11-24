@@ -1,0 +1,20 @@
+{
+  "name": "haftalik-rejam-server",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "grammy": "^1.30.0",
+    "pg": "^8.23.1"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.6.0"
+  }
+}
