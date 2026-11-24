@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Haftalik rejam</title>
+<meta name="description" content="Kunlik reja, eslatma va natija bir joyda. Telegram bot va Android ilova bilan sinxron.">
+<meta name="theme-color" content="#f7f3e8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23f6d84a'/%3E%3Cpath d='M16 25V13m0 0c0-3 2-5 5-5m-5 5c0-3-2-5-5-5' stroke='%23171a22' stroke-width='3' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=chillax@500,600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<noscript><p class="noscript">Sayt ishlashi uchun JavaScript kerak.</p></noscript>
+
+<main id="login" class="login" hidden>
+  <form id="login-form" class="login-card" autocomplete="off" novalidate>
+    <h1>Haftalik rejam</h1>
+    <p class="lead">Botdagi 6 xonali kodni kiriting.</p>
+    <label for="code">Kod</label>
+    <input id="code" class="input input--code num" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="123456" required>
+    <p id="login-error" class="form-error" role="alert" hidden></p>
+    <button class="btn btn--primary" type="submit">Kirish</button>
+    <p class="hint">Telegramda <a href="https://t.me/haftalik_rejam_bot" rel="noopener">@haftalik_rejam_bot</a> ga <b>/start</b> yuboring, u kodni beradi.</p>
+  </form>
+</main>
+
+<div id="shell" hidden>
+  <header class="bar">
+    <div class="container bar-in">
+      <a class="brand" href="#bugun">Haftalik rejam</a>
+      <nav class="tabs" aria-label="Bo'limlar">
+        <a href="#bugun" id="tab-bugun">Bugun</a>
+        <a href="#hafta" id="tab-hafta">Hafta</a>
+      </nav>
+      <div class="bar-end">
+        <p class="streak" id="streak"></p>
+        <button class="btn btn--quiet btn--sm" id="logout" type="button">Chiqish</button>
+      </div>
+    </div>
+  </header>
+  <main class="container page" id="page">
+    <section id="view-bugun" aria-labelledby="h-bugun"></section>
+    <section id="view-hafta" aria-labelledby="h-hafta" hidden></section>
+  </main>
+  <p class="visually-hidden" id="live" role="status" aria-live="polite"></p>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

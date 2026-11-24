@@ -91,3 +91,32 @@ test('yuborish xatosida belgilanmaydi (qayta uriniladi)', async () => {
   assert.equal(await tick(db, at, async () => {}), 1);
   server.close();
 });
+
+test('vazifalar bo\'yicha qo\'shish, o\'zgartirish va o\'chirish bir-birini buzmaydi', async () => {
+  const { server, base, h, db, user } = await setup();
+  const t = (id, title) => ({ id, title, start: '10:00', end: '11:00', repeat: 'daily' });
+  assert.equal((await fetch(`${base}/api/tasks`, { method: 'POST', headers: h, body: JSON.stringify({ task: t('a', 'Birinchi') }) })).status, 200);
+  assert.equal((await fetch(`${base}/api/tasks`, { method: 'POST', headers: h, body: JSON.stringify({ task: t('b', 'Ikkinchi') }) })).status, 200);
+  // bot qo'shgan vazifa saqlanib qolishi kerak
+  await db.addTask(user.id, t('bot', 'Botdan'));
+  assert.equal((await fetch(`${base}/api/tasks/a`, { method: 'PUT', headers: h, body: JSON.stringify({ task: { ...t('x', 'Yangilandi'), start: '12:00', end: '13:00' } }) })).status, 200);
+  assert.equal((await fetch(`${base}/api/tasks/b`, { method: 'DELETE', headers: h })).status, 200);
+  const tasks = await db.getTasks(user.id);
+  assert.deepEqual(tasks.map((x) => x.id).sort(), ['a', 'bot']);
+  assert.equal(tasks.find((x) => x.id === 'a').title, 'Yangilandi');
+  assert.equal((await fetch(`${base}/api/tasks`, { method: 'POST', headers: h, body: JSON.stringify({ task: { id: 'z', title: 'X', start: '10:00', end: '11:00', days: [9] } }) })).status, 400);
+  const st = await (await fetch(`${base}/api/state`, { headers: h })).json();
+  assert.match(st.today, /^\d{4}-\d{2}-\d{2}$/);
+  server.close();
+});
+
+test('veb-sayt fayllari beriladi, papkadan chiqib ketib bo\'lmaydi', async () => {
+  const { server, base } = await setup();
+  const home = await fetch(`${base}/`);
+  assert.equal(home.status, 200);
+  assert.match(home.headers.get('content-type'), /text\/html/);
+  assert.equal((await fetch(`${base}/..%2fsrc%2fdb.js`)).status, 404);
+  assert.equal((await fetch(`${base}/..%2f..%2fserver%2f.env`)).status, 404);
+  assert.equal((await fetch(`${base}/yoq.js`)).status, 404);
+  server.close();
+});
