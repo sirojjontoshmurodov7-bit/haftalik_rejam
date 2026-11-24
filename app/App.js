@@ -43,7 +43,10 @@ export default function App() {
         await saveTasks(st.tasks);
         await mergeAnswers(st.logs);
       }
-    } catch { /* offlayn: mahalliy ma'lumot bilan davom etamiz */ }
+    } catch (e) {
+      if (e.status === 401) Alert.alert('Ulanish uzildi', 'Sessiya yaroqsiz. Sozlamada kod bilan qayta ulaning.');
+      /* boshqa xato: offlayn, mahalliy ma'lumot bilan davom etamiz */
+    }
     await rescheduleAll();
     await refresh();
   }, [refresh]);

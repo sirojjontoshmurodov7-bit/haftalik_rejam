@@ -16,10 +16,10 @@
    - Botda javob berilsa, ilovadagi rejalashtirilgan bildirishnomalar keyingi sync'gacha ishlayveradi (ikki qatlam bir tomonlama).
    - Botdagi "Keyinroq" hech narsa yozmaydi (faqat avtomatik takror).
    - `/ochir` faqat bugungi vazifalarni o'chiradi.
-   - Haftalik hisobot yakshanba kuni o'zi yuborilmaydi (faqat `/hafta`).
-   - Ilova 401 xatosini (sessiya yaroqsiz) jim yutadi: "Qayta ulang" deyishi kerak.
+   - ~~Haftalik hisobot~~ tuzatildi: yakshanba 20:00 da bot o'zi yuboradi.
+   - ~~401 jim yutilishi~~ tuzatildi: ilova "Qayta ulaning" deb ogohlantiradi.
    - Vazifani tahrirlash yo'q (ilovada ham, saytda ham): o'chirib qayta qo'shiladi. `PUT /api/tasks/:id` tayyor.
-   - Offlayn navbatdagi yaroqsiz amal (400) abadiy qolib ketishi mumkin.
+   - ~~Offlayn navbatdagi yaroqsiz amal (400)~~ tuzatildi: navbatdan tashlanadi.
 4. **Sayt:** qo'shishni ilovadagidek "+" va oyna qilish, soat tanlagichni ilovadagidek qilish, "Shu haftaning jadvali" qismini qo'shish.
 5. **Ilova:** Chillax shrifti (hozir tizim shrifti), daqiqa tanlagichda 1 daqiqalik aniqlik kerakmi (hozir 5 daq. qadam), vazifani tahrirlash.
 6. **Keyin:** o'zbekcha ovozli kiritish, haftalik hisobot botda, Play Market (REJA.md 8-bo'lim).

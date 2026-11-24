@@ -6,7 +6,11 @@ async function call(session, path, method = 'GET', body) {
     headers: { 'content-type': 'application/json', 'x-user-id': String(session.userId), 'x-secret': session.secret },
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    const e = new Error(res.status === 401 ? 'Sessiya yaroqsiz, qayta ulaning' : `HTTP ${res.status}`);
+    e.status = res.status;
+    throw e;
+  }
   return res.json();
 }
 
@@ -35,7 +39,7 @@ export async function flushOps() {
     try {
       if (o.op === 'add') await call(s, '/api/tasks', 'POST', { task: o.task });
       else await call(s, `/api/tasks/${encodeURIComponent(o.id)}`, 'DELETE');
-    } catch { left.push(o); }
+    } catch (e) { if (e.status !== 400) left.push(o); } // 400: yaroqsiz amal abadiy qolib ketmasin
   }
   await saveOps(left);
 }
@@ -72,7 +76,7 @@ export async function flushPending() {
   const pending = await loadPending();
   const left = [];
   for (const p of pending) {
-    try { await call(s, '/api/answer', 'POST', p); } catch { left.push(p); }
+    try { await call(s, '/api/answer', 'POST', p); } catch (e) { if (e.status !== 400) left.push(p); }
   }
   await savePending(left);
 }
