@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, AppState, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, AppState, Platform, Pressable, SafeAreaView, ScrollView, StatusBar as RNStatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { loadTasks, saveTasks, loadSession, saveSession, loadAnswers, mergeAnswers } from './src/storage';
 import { dateStr, isActiveOn, validHHMM, toMin } from './src/time';
@@ -269,7 +269,7 @@ function Settings({ session, onLogin }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.paper },
+  root: { flex: 1, backgroundColor: C.paper, paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight || 24) : 0 },
   h1: { fontSize: 24, fontWeight: '600', color: C.ink, padding: 16, paddingBottom: 8 },
   h2: { fontSize: 22, fontWeight: '600', color: C.ink, marginBottom: 2 },
   tabs: { flexDirection: 'row', paddingHorizontal: 16, gap: 8 },
